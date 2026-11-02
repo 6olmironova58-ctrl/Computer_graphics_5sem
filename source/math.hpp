@@ -4,12 +4,22 @@
 
 namespace math {
 
+constexpr float kPi = 3.14159265358979f;
+
+inline float radians(float degrees) { return degrees * kPi / 180.0f; }
+
 struct Mat4 {
     float m[4][4] = {};
 
     float* operator[](size_t i) { return m[i]; }
     const float* operator[](size_t i) const { return m[i]; }
 };
+
+inline Mat4 mat4Identity() {
+    Mat4 res;
+    res[0][0] = 1.0f; res[1][1] = 1.0f; res[2][2] = 1.0f; res[3][3] = 1.0f;
+    return res;
+}
 
 inline Mat4 mat4Perspective(float fov, float aspect, float zNear, float zFar) {
     Mat4 res;
@@ -34,19 +44,8 @@ inline Mat4 mat4Orthographic(float left, float right, float bottom, float top, f
     return res;
 }
 
-inline Mat4 mat4LookAt() {
-    Mat4 res;
-    res[0][0] = 1.0f;
-    res[1][1] = 1.0f;
-    res[2][2] = 1.0f;
-    res[3][3] = 1.0f;
-    res[2][3] = -3.0f;
-    return res;
-}
-
 inline Mat4 mat4Translate(float x, float y, float z) {
-    Mat4 res;
-    res[0][0] = 1.0f; res[1][1] = 1.0f; res[2][2] = 1.0f; res[3][3] = 1.0f;
+    Mat4 res = mat4Identity();
     res[0][3] = x; res[1][3] = y; res[2][3] = z;
     return res;
 }
@@ -91,6 +90,14 @@ inline Mat4 mat4Multiply(const Mat4& a, const Mat4& b) {
         }
     }
     return res;
+}
+
+// Матрица вида = обратная к матрице модели камеры C = T * Ry * Rx * Rz,
+inline Mat4 mat4View(const float position[3], float pitch, float yaw, float roll) {
+    Mat4 rotation = mat4Multiply(mat4RotateZ(-roll),
+                    mat4Multiply(mat4RotateX(-pitch), mat4RotateY(-yaw)));
+    Mat4 translation = mat4Translate(-position[0], -position[1], -position[2]);
+    return mat4Multiply(rotation, translation);
 }
 
 } // namespace math
